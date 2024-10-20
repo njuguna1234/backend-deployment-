@@ -1,7 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
+from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
-
-db = SQLAlchemy()
+from datetime import datetime
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -12,7 +11,6 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     is_artist = db.Column(db.Boolean, default=False)
 
-    # Relationships
     artworks = db.relationship('Artwork', backref='artist', lazy=True)
     reviews = db.relationship('Review', backref='user', lazy=True)
     purchases = db.relationship('Purchase', backref='user', lazy=True)
@@ -26,9 +24,6 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    def __repr__(self):
-        return f'<User {self.name}>'
-
 class Artwork(db.Model):
     __tablename__ = 'artworks'
     
@@ -38,37 +33,23 @@ class Artwork(db.Model):
     price = db.Column(db.Float, nullable=False)
     
     artist_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
-    # Relationships
     reviews = db.relationship('Review', backref='artwork', lazy=True)
     purchases = db.relationship('Purchase', backref='artwork', lazy=True)
-
-    def __repr__(self):
-        return f'<Artwork {self.title}, Artist {self.artist.name}>'
 
 class Review(db.Model):
     __tablename__ = 'reviews'
     
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    rating = db.Column(db.Integer, nullable=False)  # Ensure between 1 and 5
+    rating = db.Column(db.Integer, nullable=False)
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     artwork_id = db.Column(db.Integer, db.ForeignKey('artworks.id'), nullable=False)
-
-    def __repr__(self):
-        return f'<Review {self.rating} for Artwork {self.artwork.title} by User {self.user.name}>'
-
-from datetime import datetime
 
 class Purchase(db.Model):
     __tablename__ = 'purchases'
     
     id = db.Column(db.Integer, primary_key=True)
-    purchase_date = db.Column(db.DateTime, default=datetime)
-
+    purchase_date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     artwork_id = db.Column(db.Integer, db.ForeignKey('artworks.id'), nullable=False)
-
-    def __repr__(self):
-        return f'<Purchase of Artwork {self.artwork.title} by User {self.user.name} on {self.purchase_date}>'
